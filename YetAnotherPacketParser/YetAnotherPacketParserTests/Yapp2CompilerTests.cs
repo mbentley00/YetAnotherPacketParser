@@ -28,7 +28,7 @@ namespace YetAnotherPacketParserTests
             {
                 JsonElement root = document.RootElement;
                 Assert.AreEqual(
-                    "yapp2/1.3",
+                    "yapp2/1.4",
                     root.GetProperty("version").GetString(),
                     "Without the version marker a reader has to ignore the anchored fields");
 
@@ -40,9 +40,10 @@ namespace YetAnotherPacketParserTests
                 Assert.AreEqual(
                     "Denis <pg>Diderot</pg> (\"DID-er-OW\") edited this work.",
                     tossup.GetProperty("anchored").GetProperty("question").GetString());
-                Assert.IsFalse(
-                    tossup.GetProperty("anchored").TryGetProperty("answer", out JsonElement _),
-                    "The answer has no anchor, so it shouldn't be repeated in the anchored object");
+                Assert.AreEqual(
+                    tossup.GetProperty("answer").GetString(),
+                    tossup.GetProperty("anchored").GetProperty("answer").GetString(),
+                    "Every field is written to the anchored object, even one without an anchor");
             }
         }
 
@@ -128,9 +129,16 @@ namespace YetAnotherPacketParserTests
                     "No anchor in this one.",
                     anchoredParts[1].GetString(),
                     "A part with no anchor is still written, so the indexes line up");
-                Assert.IsFalse(
-                    bonus.GetProperty("anchored").TryGetProperty("answers", out JsonElement _),
-                    "No answer has an anchor, so the whole array should be left out");
+                Assert.AreEqual(
+                    bonus.GetProperty("leadin").GetString(),
+                    bonus.GetProperty("anchored").GetProperty("leadin").GetString(),
+                    "The leadin has no anchor, but every field is written to the anchored object");
+                JsonElement anchoredAnswers = bonus.GetProperty("anchored").GetProperty("answers");
+                Assert.AreEqual(bonus.GetProperty("answers").GetArrayLength(), anchoredAnswers.GetArrayLength());
+                Assert.AreEqual(
+                    bonus.GetProperty("answers")[0].GetString(),
+                    anchoredAnswers[0].GetString(),
+                    "No answer has an anchor, but the answers are still written to the anchored object");
             }
         }
 
@@ -288,7 +296,7 @@ namespace YetAnotherPacketParserTests
                 using (JsonDocument document = JsonDocument.Parse(convertResult.Result.Value))
                 {
                     JsonElement root = document.RootElement;
-                    Assert.AreEqual("yapp2/1.3", root.GetProperty("version").GetString());
+                    Assert.AreEqual("yapp2/1.4", root.GetProperty("version").GetString());
 
                     JsonElement tossup = root.GetProperty("tossups")[0];
                     Assert.AreEqual(
@@ -335,7 +343,7 @@ namespace YetAnotherPacketParserTests
             {
                 JsonElement root = document.RootElement;
                 Assert.AreEqual(
-                    "yapp2/1.3",
+                    "yapp2/1.4",
                     root.GetProperty("version").GetString(),
                     "A game format is something yapp2 has to say, even without anchors");
 

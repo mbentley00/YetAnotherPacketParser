@@ -70,14 +70,14 @@ words a pronunciation guide covers, and the rules of the game the packet is writ
 
 The format is specified in [YAPP2_FORMAT.md](YAPP2_FORMAT.md). A yapp2 packet is the same packet, plus
 
-- a top-level `"version": "yapp2/1.3"`,
-- an `anchored` object on any question that has an anchor, holding the same text with `<pg>` tags around the anchored
-  words and a `canonicalHash` of the plain text it was made from, and
+- a top-level `"version": "yapp2/1.4"`,
+- an `anchored` object on any question that has an anchor, holding every text field of the question again with `<pg>`
+  tags around the anchored words, and a `canonicalHash` of the plain text it was made from, and
 - a top-level `gameFormat` object, when you give YAPP one.
 
 ```json
 {
-  "version": "yapp2/1.3",
+  "version": "yapp2/1.4",
   "tossups": [
     {
       "number": 1,
@@ -85,6 +85,7 @@ The format is specified in [YAPP2_FORMAT.md](YAPP2_FORMAT.md). A yapp2 packet is
       "answer": "<b><u>Encyclopédie</u></b>",
       "anchored": {
         "question": "Denis <pg>Diderot</pg> (\"DID-er-OW\") edited this work.",
+        "answer": "<b><u>Encyclopédie</u></b>",
         "canonicalHash": "d9faa5084611cecf01eef6236bc2a5ae4806c3f882592ee709d6ea94edfb43fa"
       }
     }

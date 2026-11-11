@@ -8,16 +8,16 @@ namespace YetAnotherPacketParser.Compiler.Json
     /// </summary>
     internal class JsonAnchoredTossupNode
     {
-        private JsonAnchoredTossupNode(string? question, string? answer, string canonicalHash)
+        private JsonAnchoredTossupNode(string question, string answer, string canonicalHash)
         {
             this.Question = question;
             this.Answer = answer;
             this.CanonicalHash = canonicalHash;
         }
 
-        public string? Question { get; }
+        public string Question { get; }
 
-        public string? Answer { get; }
+        public string Answer { get; }
 
         /// <summary>
         /// The hash of the canonical question and answer, in that order. See <see cref="Yapp2.HashCanonicalFields"/>.
@@ -27,8 +27,10 @@ namespace YetAnotherPacketParser.Compiler.Json
         /// <summary>
         /// Creates the anchored object for a tossup, or <c>null</c> when no field on it carries an anchor.
         /// </summary>
-        /// <remarks>Only fields that actually differ from their canonical counterpart are kept, so a packet whose
-        /// questions have no pronunciation guides is the same size in yapp2 as it is without it.</remarks>
+        /// <remarks>When any field has an anchor, every field is written, so a reader can take the whole question
+        /// from the anchored object instead of checking field by field. Questions without anchors get no anchored
+        /// object at all, so a packet whose questions have no pronunciation guides is the same size in yapp2 as it
+        /// is without it.</remarks>
         public static JsonAnchoredTossupNode? Create(TossupNode node, string question, string answer)
         {
             Verify.IsNotNull(node, nameof(node));
@@ -38,17 +40,14 @@ namespace YetAnotherPacketParser.Compiler.Json
             string anchoredAnswer = JsonTextFormatter.ToStringWithTags(
                 node.Question.Answer, writePronunciationAnchors: true);
 
-            bool questionChanged = !string.Equals(anchoredQuestion, question, StringComparison.Ordinal);
-            bool answerChanged = !string.Equals(anchoredAnswer, answer, StringComparison.Ordinal);
-            if (!questionChanged && !answerChanged)
+            if (string.Equals(anchoredQuestion, question, StringComparison.Ordinal) &&
+                string.Equals(anchoredAnswer, answer, StringComparison.Ordinal))
             {
                 return null;
             }
 
             return new JsonAnchoredTossupNode(
-                questionChanged ? anchoredQuestion : null,
-                answerChanged ? anchoredAnswer : null,
-                Yapp2.HashCanonicalFields([question, answer]));
+                anchoredQuestion, anchoredAnswer, Yapp2.HashCanonicalFields([question, answer]));
         }
     }
 }

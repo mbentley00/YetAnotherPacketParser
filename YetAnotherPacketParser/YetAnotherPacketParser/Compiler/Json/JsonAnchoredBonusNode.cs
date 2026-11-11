@@ -11,7 +11,7 @@ namespace YetAnotherPacketParser.Compiler.Json
     internal class JsonAnchoredBonusNode
     {
         private JsonAnchoredBonusNode(
-            string? leadin, ICollection<string>? parts, ICollection<string>? answers, string canonicalHash)
+            string leadin, ICollection<string> parts, ICollection<string> answers, string canonicalHash)
         {
             this.Leadin = leadin;
             this.Parts = parts;
@@ -19,11 +19,11 @@ namespace YetAnotherPacketParser.Compiler.Json
             this.CanonicalHash = canonicalHash;
         }
 
-        public string? Leadin { get; }
+        public string Leadin { get; }
 
-        public ICollection<string>? Parts { get; }
+        public ICollection<string> Parts { get; }
 
-        public ICollection<string>? Answers { get; }
+        public ICollection<string> Answers { get; }
 
         /// <summary>
         /// The hash of the canonical leadin, then every part, then every answer. See
@@ -34,8 +34,8 @@ namespace YetAnotherPacketParser.Compiler.Json
         /// <summary>
         /// Creates the anchored object for a bonus, or <c>null</c> when no field on it carries an anchor.
         /// </summary>
-        /// <remarks>The part and answer arrays are matched to the canonical ones by index, so either the whole array
-        /// is written or none of it is.</remarks>
+        /// <remarks>When any field has an anchor, every field is written, so a reader can take the whole bonus from
+        /// the anchored object instead of checking field by field.</remarks>
         public static JsonAnchoredBonusNode? Create(
             BonusNode node, string leadin, IReadOnlyList<string> parts, IReadOnlyList<string> answers)
         {
@@ -53,37 +53,18 @@ namespace YetAnotherPacketParser.Compiler.Json
                     JsonTextFormatter.ToStringWithTags(partNode.Question.Answer, writePronunciationAnchors: true));
             }
 
-            bool leadinChanged = !string.Equals(anchoredLeadin, leadin, StringComparison.Ordinal);
-            bool partsChanged = HasAnyChange(anchoredParts, parts);
-            bool answersChanged = HasAnyChange(anchoredAnswers, answers);
-            if (!leadinChanged && !partsChanged && !answersChanged)
+            if (string.Equals(anchoredLeadin, leadin, StringComparison.Ordinal) &&
+                anchoredParts.SequenceEqual(parts, StringComparer.Ordinal) &&
+                anchoredAnswers.SequenceEqual(answers, StringComparer.Ordinal))
             {
                 return null;
             }
 
             return new JsonAnchoredBonusNode(
-                leadinChanged ? anchoredLeadin : null,
-                partsChanged ? anchoredParts : null,
-                answersChanged ? anchoredAnswers : null,
+                anchoredLeadin,
+                anchoredParts,
+                anchoredAnswers,
                 Yapp2.HashCanonicalFields(parts.Prepend(leadin).Concat(answers)));
-        }
-
-        private static bool HasAnyChange(IReadOnlyList<string> anchored, IReadOnlyList<string> canonical)
-        {
-            if (anchored.Count != canonical.Count)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < anchored.Count; i++)
-            {
-                if (!string.Equals(anchored[i], canonical[i], StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

@@ -24,8 +24,9 @@ namespace YetAnotherPacketParser.Compiler.Json
         /// <remarks>1.1 also defines an optional "readingOrder" for packets whose tossups and bonuses interlace.
         /// That is never written here: the parser reads all of a document's tossups and then all of its bonuses, so
         /// a packet it produces is always in the default order, which is what omitting the field means. 1.2 adds
-        /// "gameFormat", and 1.3 adds "canonicalHash" to the anchored objects.</remarks>
-        public const string Version = "yapp2/1.3";
+        /// "gameFormat", 1.3 adds "canonicalHash" to the anchored objects, and 1.4 writes every field of an anchored
+        /// object rather than only the ones with an anchor.</remarks>
+        public const string Version = "yapp2/1.4";
 
         /// <summary>
         /// Hashes the canonical fields an anchored object was made from, so a reader can tell when someone has edited

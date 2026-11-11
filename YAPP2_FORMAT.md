@@ -10,11 +10,13 @@ It exists to carry things plain YAPP cannot:
 - **the order a packet is read in** when tossups and bonuses interlace (1.1), and
 - **the rules of the game the packet is written for** — regulation length, power markers
   and their values, neg value, and so on — so a reader doesn't have to set the game up
-  by hand each time (1.2), and
+  by hand each time (1.2),
 - **a hash of the text each anchored question was made from**, so a reader can tell when
-  the canonical text has been edited since and the anchors may no longer fit it (1.3).
+  the canonical text has been edited since and the anchors may no longer fit it (1.3), and
+- **complete `anchored` objects**, so a reader can take a whole question from `anchored`
+  instead of checking it field by field (1.4).
 
-Version: **`yapp2/1.3`**.
+Version: **`yapp2/1.4`**.
 
 ## The problem
 
@@ -43,7 +45,7 @@ would have them, and the anchored variants live beside them.
 
 ```json
 {
-  "version": "yapp2/1.3",
+  "version": "yapp2/1.4",
   "name": "Round 1",
   "gameFormat": {
     "displayName": "mACF with powers",
@@ -64,6 +66,7 @@ would have them, and the anchored variants live beside them.
       "metadata": "A Writer, Literature - European",
       "anchored": {
         "question": "Denis <pg>Diderot</pg> (\"DID-er-OW\") edited this work.",
+        "answer": "<b><u>Encyclopédie</u></b>",
         "canonicalHash": "d9faa5084611cecf01eef6236bc2a5ae4806c3f882592ee709d6ea94edfb43fa"
       }
     }
@@ -76,7 +79,9 @@ would have them, and the anchored variants live beside them.
       "answers": ["...", "..."],
       "values": [10, 10],
       "anchored": {
+        "leadin": "...",
         "parts": ["A <pg>part</pg> (\"PART\") here.", "No anchor in this one."],
+        "answers": ["...", "..."],
         "canonicalHash": "…"
       }
     }
@@ -207,9 +212,11 @@ just the common shape of it.
 ### `anchored`
 
 Optional, per question. Holds the same text as the canonical fields with `<pg>` tags
-added, and **only** the fields that actually contain an anchor:
+added. As of 1.4 it holds **every** text field of the question, including ones with no
+anchor, so a reader can take the whole question from `anchored` without checking each
+field:
 
-| Question type | Allowed keys |
+| Question type | Keys |
 |---|---|
 | tossup | `question`, `answer`, `canonicalHash` |
 | bonus | `leadin`, `parts`, `answers`, `canonicalHash` |
@@ -218,7 +225,9 @@ Rules:
 
 - Omit `anchored` entirely when no field on that question has an anchor. Most questions
   have none, so a YAPP2 file is barely larger than the YAPP equivalent.
-- Omit individual keys with no anchor rather than repeating the canonical text.
+- When `anchored` is present, write every key in the table, repeating the canonical text
+  for fields with no anchor. (Files from 1.0–1.3 left those keys out, so a reader should
+  still fall back to the canonical field when a key is missing.)
 - `parts` and `answers` are **full-length** arrays matching the canonical arrays
   element-for-element, because they are matched up by index. A reader that sees a
   length mismatch must ignore that array rather than pair strings up wrongly.
@@ -242,8 +251,8 @@ It is the **lowercase hex SHA-256** of the canonical strings, **UTF-8 encoded** 
 | bonus | `leadin`, every element of `parts`, every element of `answers` |
 
 The strings are the values as decoded from the JSON, with no other normalization. The
-hash covers every canonical field of the question, not only the ones `anchored` repeats,
-so editing any of them invalidates the whole `anchored` object. For the tossup above:
+hash covers every canonical field of the question, so editing any of them invalidates the
+whole `anchored` object. For the tossup above:
 
 ```
 SHA-256(UTF-8("Denis Diderot (\"DID-er-OW\") edited this work." + "\u0000" + "<b><u>Encyclopédie</u></b>"))
@@ -285,7 +294,8 @@ lose nothing but the anchoring.
 
 ## Producing YAPP2
 
-Emit both forms of a field, then drop the anchored one if it came out identical. A
+Emit both forms of every field, then drop the whole `anchored` object if every field came
+out identical. A
 producer with nothing YAPP2 to say — no anchors, no `readingOrder` and no `gameFormat` —
 should emit plain YAPP (no `version`) rather than an empty YAPP2 file.
 
@@ -351,7 +361,8 @@ nothing by always preferring the anchored text.
   silently drop it. That repo and QEMS carry copies of this document.
 - `gameFormat` (1.2) and `canonicalHash` (1.3) are new: QEMS doesn't write them, and
   MODAQ doesn't apply the format or check the hash yet. A reader that follows the version
-  rule above still reads a 1.3 file, ignoring both. MODAQ's export writes `anchored` back
+  rule above still reads a 1.4 file, ignoring both. QEMS still writes only the anchored
+  fields (the 1.0–1.3 shape); MODAQ falls back field by field, so it reads both shapes. MODAQ's export writes `anchored` back
   out, so once it edits question text it also needs to recompute or drop the hash.
 
 ## Why not other approaches
